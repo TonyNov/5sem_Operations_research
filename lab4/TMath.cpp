@@ -14,6 +14,8 @@ private:
     const double eps = 1e-20;
     bool toMax;
     std::vector<double> optimal;
+    std::vector<int> baseVarsPlace;
+    int baseVarCount = 0;
     bool simplexStep(std::vector<std::vector<double>> &table)
     {
         int limitCount = table.size() - 1;
@@ -94,7 +96,7 @@ private:
         }
         return values;
     }
-    void printSystem(std::vector<std::vector<double>> matrix)
+    void printSystem(std::vector<std::vector<double>> matrix, bool hideBaseVars)
     {
         for (int i = 0; i < matrix.size() - 1; i++)
         {
@@ -109,7 +111,7 @@ private:
                     outFile << "-a";
                     break;
                 case 0:
-                    outFile << "0a";
+                    outFile << "";
                     break;
                 default:
                     outFile << matrix[i][0] << 'a';
@@ -118,13 +120,33 @@ private:
             }
             else
                 outFile << matrix[i][0] << 'a';
-            for (int j = 1; j < matrix[0].size() - 1; j++)
-                if (matrix[i][j])
-                    if (matrix[i][j] < 0)
-                        outFile << matrix[i][j] << (char)('a' + j);
-                    else
-                        outFile << " + " << matrix[i][j] << (char)('a' + j);
+            if (!hideBaseVars)
+            {
+                for (int j = 1; j < matrix[0].size() - 1; j++)
+                    if (matrix[i][j])
+                        if (matrix[i][j] < 0)
+                            outFile << matrix[i][j] << (char)('a' + j);
+                        else
+                            outFile << " + " << matrix[i][j] << (char)('a' + j);
                 outFile << " = " << matrix[i].back() << std::endl;
+            }
+            else
+            {
+                for (int j = 1; j < matrix[0].size() - baseVarCount - 1; j++)
+                    if (matrix[i][j])
+                        if (matrix[i][j] < 0)
+                            outFile << matrix[i][j] << (char)('a' + j);
+                        else
+                            outFile << " + " << matrix[i][j] << (char)('a' + j);
+                if (baseVarsPlace[i] == 0)
+                    outFile << " = " << matrix[i].back() << std::endl;
+                else if (baseVarsPlace[i] < 0)
+                {
+                    outFile << " >= " << matrix[i].back() << std::endl;
+                }
+                else
+                    outFile << " <= " << matrix[i].back() << std::endl;
+            }
         }
         outFile << "f = ";
         if (toMax)
@@ -158,7 +180,7 @@ private:
             if (visible)
             {
                 outFile << std::endl;
-                printSystem(table);
+                printSystem(table, false);
             }
         }
         auto values = solveSimplex(table, false);
@@ -173,11 +195,11 @@ private:
         if (isInteger(f) && nonInteger == -1)
         {
             if (visible)
-                for (int i = 0; i < table[0].size() - 1; i++)
+                for (int i = 0; i < baseVarCount; i++)
                     outFile << "x" << (i + 1) << " = " << values[i] << std::endl;
             if (visible)
                 outFile << "F=" << f << std::endl;
-            if ((f > solveFunc(table[table.size() - 1], optimal)) == toMax)
+            if ((f < solveFunc(table[table.size() - 1], optimal)) == toMax)
             {
                 optimal.assign(values.begin(), values.end());
                 if (visible)
@@ -243,6 +265,7 @@ public:
         for (auto elem : data)
             elem.clear();
         data.clear();
+        baseVarsPlace.clear();
         if (matrix.size() != signs.size() || matrix[0].size() != func.size())
         {
             outFile << "Неверные параметры!";
@@ -250,19 +273,25 @@ public:
         }
         data = matrix;
         this->toMax = toMax;
-        int baseVarCount = 0, tempCounter = 0;
+        baseVarCount = 0;
+        int tempCounter = 0;
         for (int i = 0; i < signs.size(); i++)
-            if (signs[i]!=0)
+            if (signs[i] != 0)
                 baseVarCount++;
         for (int i = 0; i < data.size(); i++)
         {
             for (int j = 0; j < baseVarCount; j++)
-                if (j == tempCounter)
+                if (j == tempCounter && signs[i] != 0)
+                {
                     data[i].push_back(signs[i]);
+                    baseVarsPlace.push_back(signs[i] * data[i].size() - 1);
+                }
                 else
                     data[i].push_back(0);
             if (signs[i] != 0)
                 tempCounter++;
+            else
+                baseVarsPlace.push_back(0);
             data[i].push_back(rightSide[i]);
         }
         if (toMax)
@@ -419,9 +448,9 @@ public:
             outFile << "Матрица пуста\n";
     }
     /// @brief Вывести систему равенств/неравенств
-    void printSystem()
+    void printSystem(bool hideBaseVars)
     {
-        printSystem(data);
+        printSystem(data, hideBaseVars);
     }
 
     /// @brief Вывести равенство красиво. Последний жлемент массива - значение с правой стороны
@@ -472,5 +501,9 @@ public:
     std::vector<double> solveSimplexV()
     {
         return solveSimplex(data, true);
+    }
+    int getBaseVarsCount()
+    {
+        return baseVarCount;
     }
 };
