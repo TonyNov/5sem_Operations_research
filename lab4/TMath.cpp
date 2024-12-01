@@ -163,7 +163,7 @@ private:
         else
         {
             outFile << matrix.back()[0] << 'a';
-            for (int j = 1; j < matrix[0].size() - 2; j++)
+            for (int j = 1; j < matrix[0].size() - 1; j++)
                 if (matrix.back()[j])
                     if (matrix.back()[j] < 0)
                         outFile << matrix.back()[j] << (char)('a' + j);
@@ -209,6 +209,11 @@ private:
         else
         {
             std::vector<double> temp = std::vector<double>(table[0].size() - 1, 0);
+            for (auto elem : table)
+            {
+                elem.push_back(elem[elem.size() - 1]);
+                elem[elem.size() - 2] = 0;
+            }
             ////!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             temp.push_back(-1);
             temp.push_back(ceil(values[nonInteger]));
