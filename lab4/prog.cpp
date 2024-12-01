@@ -28,4 +28,5 @@ int main()
     for (int i = 0; i < result.size() - math.getNonBaseVarsCount(); i++)
         func.push_back(0);
     std::cout << "F = " << math.solveFunc(func, result) << std::endl;
+    
 }

@@ -4,8 +4,8 @@
 #include <iomanip>
 #include <windows.h>
 #include <fstream>
-// #define outFile std::cout
-#define outFile outStream
+#define outFile std::cout
+// #define outFile outStream
 class TMath
 {
 private:
