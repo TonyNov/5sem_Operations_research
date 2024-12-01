@@ -209,12 +209,11 @@ private:
         else
         {
             std::vector<double> temp = std::vector<double>(table[0].size() - 1, 0);
-            for (auto elem : table)
+            for (int i = 0; i < table.size(); i++)
             {
-                elem.push_back(elem[elem.size() - 1]);
-                elem[elem.size() - 2] = 0;
+                table[i].push_back(table[i][table[i].size() - 1]);
+                table[i][table[i].size() - 2] = 0;
             }
-            ////!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             temp.push_back(-1);
             temp.push_back(ceil(values[nonInteger]));
             if (temp != table[0])

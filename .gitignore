@@ -400,3 +400,5 @@ FodyWeavers.xsd
 .vscode/settings.json
 lab4/prog.exe
 lab4/TMath.exe
+lab4/TMath_output.txt
+.vscode/launch.json
