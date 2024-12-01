@@ -20,8 +20,9 @@ int main()
         std::cout << "Ошибка при создании матрицы!\n";
         return 0;
     }
-    auto optimal = math.branchAndBoundaryMethodV();
-    for (int i = 0; i < optimal.size(); i++)
+    auto optimal = math.branchAndBoundaryMethodV(false, true);
+    for (int i = 0; i < math.getNonBaseVarsCount(); i++)
         std::cout << "X" << i + 1 << "= " << optimal[i] << std::endl;
-    math.solveFunc(func, optimal); 
+
+    std::cout << "F = " << math.solveFunc(func, optimal) << std::endl;
 }

@@ -15,7 +15,7 @@ private:
     bool toMax;
     std::vector<double> optimal;
     std::vector<int> baseVarsPlace;
-    int baseVarCount = 0;
+    int nonbaseVarCount = 0;
     bool simplexStep(std::vector<std::vector<double>> &table)
     {
         int limitCount = table.size() - 1;
@@ -120,24 +120,19 @@ private:
             }
             else
                 outFile << matrix[i][0] << 'a';
-            if (!hideBaseVars)
+            if (hideBaseVars)
             {
-                for (int j = 1; j < matrix[0].size() - 1; j++)
+                for (int j = 1; j < nonbaseVarCount; j++)
                     if (matrix[i][j])
                         if (matrix[i][j] < 0)
-                            outFile << matrix[i][j] << (char)('a' + j);
-                        else
+                            if (abs(matrix[i][j] != 1))
+                                outFile << matrix[i][j] << (char)('a' + j);
+                            else
+                                outFile << (char)('a' + j);
+                        else if (abs(matrix[i][j] != 1))
                             outFile << " + " << matrix[i][j] << (char)('a' + j);
-                outFile << " = " << matrix[i].back() << std::endl;
-            }
-            else
-            {
-                for (int j = 1; j < matrix[0].size() - baseVarCount - 1; j++)
-                    if (matrix[i][j])
-                        if (matrix[i][j] < 0)
-                            outFile << matrix[i][j] << (char)('a' + j);
                         else
-                            outFile << " + " << matrix[i][j] << (char)('a' + j);
+                            outFile << " + " << (char)('a' + j);
                 if (baseVarsPlace[i] == 0)
                     outFile << " = " << matrix[i].back() << std::endl;
                 else if (baseVarsPlace[i] < 0)
@@ -146,6 +141,16 @@ private:
                 }
                 else
                     outFile << " <= " << matrix[i].back() << std::endl;
+            }
+            else
+            {
+                for (int j = 1; j < matrix[0].size() - 1; j++)
+                    if (matrix[i][j])
+                        if (matrix[i][j] < 0)
+                            outFile << (abs(matrix[i][j]) != 1 ? matrix[i][j] : ' ') << (char)('a' + j);
+                        else
+                            outFile << " + " << (abs(matrix[i][j]) != 1 ? matrix[i][j] : ' ') << (char)('a' + j);
+                outFile << " = " << matrix[i].back() << std::endl;
             }
         }
         outFile << "f = ";
@@ -172,7 +177,7 @@ private:
             outFile << " -> min\n";
         }
     }
-    void separateBranch(std::vector<std::vector<double>> table, std::string curBranch, bool visible)
+    void separateBranch(std::vector<std::vector<double>> table, std::string curBranch, bool visible, bool visibleSimplex, bool hideBaseVars)
     {
         if (visible)
         {
@@ -180,10 +185,14 @@ private:
             if (visible)
             {
                 outFile << std::endl;
-                printSystem(table, false);
+                printSystem(table, hideBaseVars);
             }
         }
-        auto values = solveSimplex(table, false);
+        std::vector<double> values;
+        if (visibleSimplex)
+            values = solveSimplex(table, true);
+        else
+            values = solveSimplex(table, false);
         auto f = solveFunc(table[table.size() - 1], values) * (toMax ? -1 : 1);
         int nonInteger = -1;
         for (int i = 0; i < values.size() - 1; i++)
@@ -195,11 +204,12 @@ private:
         if (isInteger(f) && nonInteger == -1)
         {
             if (visible)
-                for (int i = 0; i < baseVarCount; i++)
+                for (int i = 0; i < nonbaseVarCount; i++)
                     outFile << "x" << (i + 1) << " = " << values[i] << std::endl;
             if (visible)
                 outFile << "F=" << f << std::endl;
-            if ((f < solveFunc(table[table.size() - 1], optimal)) == toMax)
+            auto cur = solveFunc(table[table.size() - 1], optimal) * (toMax ? -1 : 1);
+            if (!optimal.size() || f < cur)
             {
                 optimal.assign(values.begin(), values.end());
                 if (visible)
@@ -208,34 +218,25 @@ private:
         }
         else
         {
+            if ((ceil(values[nonInteger]) == table[0].back() && table[0][table[0].size() - 2] == -1) || ceil(values[nonInteger]) - 1 == table[0].back() && table[0][table[0].size() - 2] == 1)
+            {
+                outFile << "Нет решения!\n";
+                return;
+            }
             std::vector<double> temp = std::vector<double>(table[0].size() - 1, 0);
             for (int i = 0; i < table.size(); i++)
             {
                 table[i].push_back(table[i][table[i].size() - 1]);
                 table[i][table[i].size() - 2] = 0;
             }
+            temp[nonInteger] = 1;
             temp.push_back(-1);
             temp.push_back(ceil(values[nonInteger]));
-            if (temp != table[0])
-            {
-                temp[temp.size() - 2] = 1;
-                temp.back()--;
-                if (temp == table[0])
-                {
-                    outFile << "Нет решения!\n";
-                    return;
-                }
-                else
-                {
-                    temp[temp.size() - 2] = -1;
-                    temp.back()++;
-                    if (visible)
-                        for (int i = 0; i < table[0].size() - 2; i++)
-                            outFile << "x" << (i + 1) << " = " << values[i] << std::endl;
-                    if (visible)
-                        outFile << "F=" << f << std::endl;
-                }
-            }
+            if (visible)
+                for (int i = 0; i < nonbaseVarCount; i++)
+                    outFile << "x" << (i + 1) << " = " << values[i] << std::endl;
+            if (visible)
+                outFile << "F=" << f << std::endl;
             else
             {
                 outFile << "Нет решения!\n";
@@ -243,13 +244,16 @@ private:
             }
             outFile << "Нецелочисленное решение. Разветвляемся\n";
             table.insert(table.begin(), temp);
-            separateBranch(table, curBranch + '1', visible);
+            baseVarsPlace.insert(baseVarsPlace.begin(), (temp.size() - 2) * temp[temp.size() - 2]);
+            separateBranch(table, curBranch + '1', visible, visibleSimplex, hideBaseVars);
             outFile << "\n==Откат==\n";
             table[0][table[0].size() - 2] = 1;
             table[0].back()--;
-            separateBranch(table, curBranch + '2', visible);
+            baseVarsPlace[0] *= -1;
+            separateBranch(table, curBranch + '2', visible, visibleSimplex, hideBaseVars);
             outFile << "\n==Откат==\n";
             table.erase(table.begin());
+            baseVarsPlace.erase(baseVarsPlace.begin());
         }
     }
 
@@ -277,7 +281,8 @@ public:
         }
         data = matrix;
         this->toMax = toMax;
-        baseVarCount = 0;
+        nonbaseVarCount = matrix.size();
+        int baseVarCount = 0;
         int tempCounter = 0;
         for (int i = 0; i < signs.size(); i++)
             if (signs[i] != 0)
@@ -315,18 +320,18 @@ public:
     {
         if (data.size())
         {
-            separateBranch(data, "1", false);
+            separateBranch(data, "1", false, false, true);
             return optimal;
         }
         outFile << "Пустая матрица\n";
         return {};
     }
     /// @brief Обработать мутрицу методом ветвей и границ. С выводом в консоль
-    std::vector<double> branchAndBoundaryMethodV()
+    std::vector<double> branchAndBoundaryMethodV(bool visibleSimplex, bool hideBaseVars = true)
     {
         if (data.size())
         {
-            separateBranch(data, "1", true);
+            separateBranch(data, "1", true, visibleSimplex, hideBaseVars);
             return optimal;
         }
         outFile << "Пустая матрица\n";
@@ -506,8 +511,8 @@ public:
     {
         return solveSimplex(data, true);
     }
-    int getBaseVarsCount()
+    int getNonBaseVarsCount()
     {
-        return baseVarCount;
+        return nonbaseVarCount;
     }
 };
