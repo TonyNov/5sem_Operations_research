@@ -20,9 +20,12 @@ int main()
         std::cout << "Ошибка при создании матрицы!\n";
         return 0;
     }
-    auto optimal = math.branchAndBoundaryMethodV(false, true);
+    math.printSystem(false);
+    std::cout << "Максимальное целочисленное решение:\n";
+    auto result = math.branchAndBoundaryMethodV(true, false, true);
     for (int i = 0; i < math.getNonBaseVarsCount(); i++)
-        std::cout << "X" << i + 1 << "= " << optimal[i] << std::endl;
-
-    std::cout << "F = " << math.solveFunc(func, optimal) << std::endl;
+        std::cout << "X" << i + 1 << "= " << result[i] << std::endl;
+    for (int i = 0; i < result.size() - math.getNonBaseVarsCount(); i++)
+        func.push_back(0);
+    std::cout << "F = " << math.solveFunc(func, result) << std::endl;
 }

@@ -4,8 +4,8 @@
 #include <iomanip>
 #include <windows.h>
 #include <fstream>
-#define outFile std::cout
-// #define outFile outStream
+// #define outFile std::cout
+#define outFile outStream
 class TMath
 {
 private:
@@ -177,7 +177,7 @@ private:
             outFile << " -> min\n";
         }
     }
-    void separateBranch(std::vector<std::vector<double>> table, std::string curBranch, bool visible, bool visibleSimplex, bool hideBaseVars)
+    void separateBranch(std::vector<std::vector<double>> table, std::string curBranch, bool findMax, bool visible, bool visibleSimplex, bool hideBaseVars)
     {
         if (visible)
         {
@@ -201,19 +201,29 @@ private:
                 nonInteger = i;
                 break;
             }
-        if (isInteger(f) && nonInteger == -1)
+        if (nonInteger == -1)
         {
             if (visible)
+            {
                 for (int i = 0; i < nonbaseVarCount; i++)
                     outFile << "x" << (i + 1) << " = " << values[i] << std::endl;
-            if (visible)
                 outFile << "F=" << f << std::endl;
+                outFile << "Целочисленное решение.\n";
+            }
             auto cur = solveFunc(table[table.size() - 1], optimal) * (toMax ? -1 : 1);
-            if (!optimal.size() || f < cur)
+            if (!optimal.size())
             {
-                optimal.assign(values.begin(), values.end());
+                for (int i = 0; i < nonbaseVarCount; i++)
+                    optimal.push_back(values[i]);
                 if (visible)
-                    outFile << "Целочисленное решение. Сохраняем результат.\n\n";
+                    outFile << "Новое значение лучше предыдущего (oldF = " << solveFunc(data.back(), optimal) << "). Сохраняем.\n";
+            }
+            else if ((f > cur) == findMax)
+            {
+                for (int i = 0; i < nonbaseVarCount; i++)
+                    optimal[i] = values[i];
+                if (visible)
+                    outFile << "Новое значение лучше предыдущего (oldF = " << solveFunc(data.back(), optimal) << "). Сохраняем.\n";
             }
         }
         else
@@ -245,12 +255,12 @@ private:
             outFile << "Нецелочисленное решение. Разветвляемся\n";
             table.insert(table.begin(), temp);
             baseVarsPlace.insert(baseVarsPlace.begin(), (temp.size() - 2) * temp[temp.size() - 2]);
-            separateBranch(table, curBranch + '1', visible, visibleSimplex, hideBaseVars);
-            outFile << "\n==Откат==\n";
+            separateBranch(table, curBranch + '1', findMax, visible, visibleSimplex, hideBaseVars);
+            outFile << "\n==Откат в ветка " << curBranch << "==\n";
             table[0][table[0].size() - 2] = 1;
             table[0].back()--;
             baseVarsPlace[0] *= -1;
-            separateBranch(table, curBranch + '2', visible, visibleSimplex, hideBaseVars);
+            separateBranch(table, curBranch + '2', findMax, visible, visibleSimplex, hideBaseVars);
             outFile << "\n==Откат==\n";
             table.erase(table.begin());
             baseVarsPlace.erase(baseVarsPlace.begin());
@@ -268,7 +278,7 @@ public:
     /// @param rightSide Значение в правой стороне
     /// @param func Количество элементов равно количеству элементов строки matrix минус 1 - с правой стороны значения нет.
     /// @param toMax true, если стремится к максимуму, false - к минимуму.
-    bool loadMatrix(std::vector<std::vector<double>> matrix, std::vector<int> signs, std::vector<double> rightSide, std::vector<double> func, bool toMax)
+    bool loadMatrix(std::vector<std::vector<double>> matrix, std::vector<int> signs, std::vector<double> rightSide, std::vector<double> func, bool toMax = true)
     {
         for (auto elem : data)
             elem.clear();
@@ -316,22 +326,22 @@ public:
         return true;
     }
     /// @brief Обработать мутрицу методом ветвей и границ. Без вывода в консоль
-    std::vector<double> branchAndBoundaryMethod()
+    std::vector<double> branchAndBoundaryMethod(bool findMax)
     {
         if (data.size())
         {
-            separateBranch(data, "1", false, false, true);
+            separateBranch(data, "1", findMax, false, false, true);
             return optimal;
         }
         outFile << "Пустая матрица\n";
         return {};
     }
     /// @brief Обработать мутрицу методом ветвей и границ. С выводом в консоль
-    std::vector<double> branchAndBoundaryMethodV(bool visibleSimplex, bool hideBaseVars = true)
+    std::vector<double> branchAndBoundaryMethodV(bool findMax, bool visibleSimplex, bool hideBaseVars = true)
     {
         if (data.size())
         {
-            separateBranch(data, "1", true, visibleSimplex, hideBaseVars);
+            separateBranch(data, "1", findMax, true, visibleSimplex, hideBaseVars);
             return optimal;
         }
         outFile << "Пустая матрица\n";
