@@ -186,12 +186,8 @@ private:
     {
         if (visible)
         {
-            outFile << "\n==Ветка " << curBranch << "==" << std::endl;
-            if (visible)
-            {
-                outFile << std::endl;
-                printSystem(table, hideBaseVars);
-            }
+            outFile << "\n==Ветка " << curBranch << "==\n\n";
+            printSystem(table, hideBaseVars);
         }
         std::vector<double> values;
         if (visibleSimplex)
@@ -235,7 +231,8 @@ private:
         {
             if (table[0][nonInteger] && ((ceil(values[nonInteger]) == table[0].back() && table[0][table[0].size() - 2] == -1) || (ceil(values[nonInteger]) - 1 == table[0].back() && table[0][table[0].size() - 2] == 1)))
             {
-                outFile << "Нет решения!\n";
+                if (visible)
+                    outFile << "Нет решения!\n";
                 return;
             }
             std::vector<double> temp = std::vector<double>(table[0].size() - 1, 0);
@@ -248,20 +245,23 @@ private:
             temp.push_back(-1);
             temp.push_back(ceil(values[nonInteger]));
             if (visible)
+            {
                 for (int i = 0; i < nonbaseVarCount; i++)
                     outFile << "x" << (i + 1) << " = " << values[i] << std::endl;
-            if (visible)
                 outFile << "F=" << f << std::endl;
-            outFile << "Нецелочисленное решение. Разветвляемся\n";
+                outFile << "Нецелочисленное решение. Разветвляемся\n";
+            }
             table.insert(table.begin(), temp);
             baseVarsPlace.insert(baseVarsPlace.begin(), (temp.size() - 2) * temp[temp.size() - 2]);
             separateBranch(table, curBranch + '1', findMax, visible, visibleSimplex, hideBaseVars);
-            outFile << "\n==Откат в ветка " << curBranch << "==\n";
+            if (visible)
+                outFile << "\n==Откат в ветка " << curBranch << "==\n";
             table[0][table[0].size() - 2] = 1;
             table[0].back()--;
             baseVarsPlace[0] *= -1;
             separateBranch(table, curBranch + '2', findMax, visible, visibleSimplex, hideBaseVars);
-            outFile << "\n==Откат==\n";
+            if (visible)
+                outFile << "\n==Откат==\n";
             table.erase(table.begin());
             baseVarsPlace.erase(baseVarsPlace.begin());
         }

@@ -8,21 +8,21 @@ int main()
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
     TMath math;
-    // std::vector<std::vector<double>> matrix = {
-    //     {2, 5},
-    //     {4, 2}};
-    // std::vector<double> rightSide = {9, 9};
-    // std::vector<int> signs = {1, 1};
-    // std::vector<double> func = {3,2};
-
     std::vector<std::vector<double>> matrix = {
+        {2, 5},
+        {4, 2}};
+    std::vector<double> rightSide = {9, 9};
+    std::vector<int> signs = {1, 1};
+    std::vector<double> func = {3, 2};
+
+    /* std::vector<std::vector<double>> matrix = {
         {0, 1, 0, 0, 0, 1},
         {1, 0, 0, 0, -1, 0},
         {2, 5, 1, 0, 0, 0},
         {4, 2, 0, 1, 0, 0}};
     std::vector<double> rightSide = {0, 2, 9, 9};
     std::vector<int> signs = {0, 0, 0, 0};
-    std::vector<double> func = {3, 2, 0, 0, 0, 0};
+    std::vector<double> func = {3, 2, 0, 0, 0, 0}; */
     //     0 + b + f = 0
     // a -1e = 2
     // 2a + 5b + c = 9
@@ -35,7 +35,8 @@ int main()
         return 0;
     }
     math.printSystem(false);
-    auto result = math.branchAndBoundaryMethodV(true, true, false);
+    // auto result = math.branchAndBoundaryMethodV(true, true, false);
+    auto result = math.branchAndBoundaryMethod(true);
     if (result.size() == 0)
     {
         std::cout << "Решение не найдено!\n";
