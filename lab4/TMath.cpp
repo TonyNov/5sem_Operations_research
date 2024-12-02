@@ -111,7 +111,7 @@ private:
                     outFile << "-a";
                     break;
                 case 0:
-                    outFile << "";
+                    outFile << "0";
                     break;
                 default:
                     outFile << matrix[i][0] << 'a';
@@ -126,9 +126,9 @@ private:
                     if (matrix[i][j])
                         if (matrix[i][j] < 0)
                             if (abs(matrix[i][j] != 1))
-                                outFile << matrix[i][j] << (char)('a' + j);
+                                outFile << " " << matrix[i][j] << (char)('a' + j);
                             else
-                                outFile << (char)('a' + j);
+                                outFile << " -" << (char)('a' + j);
                         else if (abs(matrix[i][j] != 1))
                             outFile << " + " << matrix[i][j] << (char)('a' + j);
                         else
@@ -147,9 +147,14 @@ private:
                 for (int j = 1; j < matrix[0].size() - 1; j++)
                     if (matrix[i][j])
                         if (matrix[i][j] < 0)
-                            outFile << (abs(matrix[i][j]) != 1 ? matrix[i][j] : ' ') << (char)('a' + j);
+                            if (abs(matrix[i][j] != 1))
+                                outFile << " " << matrix[i][j] << (char)('a' + j);
+                            else
+                                outFile << " -" << (char)('a' + j);
+                        else if (abs(matrix[i][j] != 1))
+                            outFile << " + " << matrix[i][j] << (char)('a' + j);
                         else
-                            outFile << " + " << (abs(matrix[i][j]) != 1 ? matrix[i][j] : ' ') << (char)('a' + j);
+                            outFile << " + " << (char)('a' + j);
                 outFile << " = " << matrix[i].back() << std::endl;
             }
         }
@@ -228,7 +233,7 @@ private:
         }
         else
         {
-            if ((ceil(values[nonInteger]) == table[0].back() && table[0][table[0].size() - 2] == -1) || ceil(values[nonInteger]) - 1 == table[0].back() && table[0][table[0].size() - 2] == 1)
+            if (table[0][nonInteger] && ((ceil(values[nonInteger]) == table[0].back() && table[0][table[0].size() - 2] == -1) || (ceil(values[nonInteger]) - 1 == table[0].back() && table[0][table[0].size() - 2] == 1)))
             {
                 outFile << "Нет решения!\n";
                 return;
@@ -247,11 +252,6 @@ private:
                     outFile << "x" << (i + 1) << " = " << values[i] << std::endl;
             if (visible)
                 outFile << "F=" << f << std::endl;
-            else
-            {
-                outFile << "Нет решения!\n";
-                return;
-            }
             outFile << "Нецелочисленное решение. Разветвляемся\n";
             table.insert(table.begin(), temp);
             baseVarsPlace.insert(baseVarsPlace.begin(), (temp.size() - 2) * temp[temp.size() - 2]);
@@ -438,10 +438,10 @@ public:
     {
         if (matrix.size())
         {
-            for (const auto &row : matrix)
+            for (int i = 0; i < matrix.size(); i++)
             {
-                for (double value : row)
-                    outFile << std::setw(7) << value << "\t";
+                for (int j = 0; j < matrix[i].size(); j++)
+                    outFile << std::setw(7) << matrix[i][j] << "\t";
                 outFile << std::endl;
             }
             outFile << std::endl;
@@ -455,10 +455,10 @@ public:
     {
         if (data.size())
         {
-            for (const auto &row : data)
+            for (int i = 0; i < data.size(); i++)
             {
-                for (double value : row)
-                    outFile << std::setw(7) << value << "\t";
+                for (int j = 0; j < data[i].size(); j++)
+                    outFile << std::setw(7) << data[i][j] << "\t";
                 outFile << std::endl;
             }
             outFile << std::endl;
