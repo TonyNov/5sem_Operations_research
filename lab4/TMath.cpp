@@ -81,6 +81,7 @@ private:
             if (visibleSteps)
                 printMat(table);
         } while (simplexStep(table));
+        printMat(table);
         std::vector<double> values;
         for (int i = 0; i < table[0].size() - 1; ++i)
         {
@@ -337,11 +338,11 @@ public:
         return {};
     }
     /// @brief Обработать мутрицу методом ветвей и границ. С выводом в консоль
-    std::vector<double> branchAndBoundaryMethodV(bool findMax, bool visibleSimplex, bool hideBaseVars = true)
+    std::vector<double> branchAndBoundaryMethodV(bool findMax, bool visibleSimplex, bool visibleBaseVars=false)
     {
         if (data.size())
         {
-            separateBranch(data, "1", findMax, true, visibleSimplex, hideBaseVars);
+            separateBranch(data, "1", findMax, true, visibleSimplex, !visibleBaseVars);
             return optimal;
         }
         outFile << "Пустая матрица\n";
