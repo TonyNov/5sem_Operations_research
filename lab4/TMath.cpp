@@ -81,7 +81,8 @@ private:
             if (visibleSteps)
                 printMat(table);
         } while (simplexStep(table));
-        printMat(table);
+        if (visibleSteps)
+            printMat(table);
         std::vector<double> values;
         for (int i = 0; i < table[0].size() - 1; ++i)
         {
@@ -124,7 +125,7 @@ private:
             if (hideBaseVars)
             {
                 for (int j = 1; j < nonbaseVarCount; j++)
-                    if (matrix[i][j])
+                    if (matrix[i][j] != 0)
                         if (matrix[i][j] < 0)
                             if (abs(matrix[i][j] != 1))
                                 outFile << " " << matrix[i][j] << (char)('a' + j);
@@ -146,7 +147,7 @@ private:
             else
             {
                 for (int j = 1; j < matrix[0].size() - 1; j++)
-                    if (matrix[i][j])
+                    if (matrix[i][j] != 0)
                         if (matrix[i][j] < 0)
                             if (abs(matrix[i][j] != 1))
                                 outFile << " " << matrix[i][j] << (char)('a' + j);
@@ -218,14 +219,14 @@ private:
                 for (int i = 0; i < nonbaseVarCount; i++)
                     optimal.push_back(values[i]);
                 if (visible)
-                    outFile << "Новое значение лучше предыдущего (oldF = " << solveFunc(data.back(), optimal) << "). Сохраняем.\n";
+                    outFile << "Новое значение лучше предыдущего. Сохраняем.\n";
             }
             else if ((f > cur) == findMax)
             {
                 for (int i = 0; i < nonbaseVarCount; i++)
                     optimal[i] = values[i];
                 if (visible)
-                    outFile << "Новое значение лучше предыдущего (oldF = " << solveFunc(data.back(), optimal) << "). Сохраняем.\n";
+                    outFile << "Новое значение лучше предыдущего. Сохраняем.\n";
             }
         }
         else
@@ -261,8 +262,6 @@ private:
             table[0].back()--;
             baseVarsPlace[0] *= -1;
             separateBranch(table, curBranch + '2', findMax, visible, visibleSimplex, hideBaseVars);
-            if (visible)
-                outFile << "\n==Откат==\n";
             table.erase(table.begin());
             baseVarsPlace.erase(baseVarsPlace.begin());
         }
@@ -292,7 +291,7 @@ public:
         }
         data = matrix;
         this->toMax = toMax;
-        nonbaseVarCount = matrix.size();
+        nonbaseVarCount = matrix[0].size();
         int baseVarCount = 0;
         int tempCounter = 0;
         for (int i = 0; i < signs.size(); i++)
@@ -338,7 +337,7 @@ public:
         return {};
     }
     /// @brief Обработать мутрицу методом ветвей и границ. С выводом в консоль
-    std::vector<double> branchAndBoundaryMethodV(bool findMax, bool visibleSimplex, bool visibleBaseVars=false)
+    std::vector<double> branchAndBoundaryMethodV(bool findMax, bool visibleSimplex, bool visibleBaseVars = false)
     {
         if (data.size())
         {
